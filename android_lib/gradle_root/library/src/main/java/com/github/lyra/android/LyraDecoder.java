@@ -2,7 +2,7 @@ package com.github.lyra.android;
 
 import java.nio.ByteBuffer;
 
-class LyraDecoder {
+public class LyraDecoder {
     private final long nativePtr;
 
     public LyraDecoder(int sampleRateHz, int numChannels, String modelBasePath) {
@@ -22,7 +22,14 @@ class LyraDecoder {
     }
 
     private static native long create(int sampleRateHz, int numChannels, String modelBasePath);
+
     private static native boolean setEncodedPacket(long ptr, ByteBuffer packet, int packetSize);
+
     private static native int decodeSamples(long ptr, int numSamples, ByteBuffer outBuffer);
+
     private static native void release(long ptr);
+
+    static {
+        System.loadLibrary("lyra_jni");
+    }
 }
