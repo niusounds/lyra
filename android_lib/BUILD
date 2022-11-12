@@ -31,8 +31,8 @@ cc_library(
 android_library(
     name = "lyra_android_lib",
     srcs = [
-        "//android_lib/java/com/github/lyra/android:LyraEncoder.java",
         "//android_lib/java/com/github/lyra/android:LyraDecoder.java",
+        "//android_lib/java/com/github/lyra/android:LyraEncoder.java",
     ],
     custom_package = "com.github.lyra.android",
     deps = [
