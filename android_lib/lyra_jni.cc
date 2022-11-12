@@ -26,14 +26,50 @@
 
 extern "C" JNIEXPORT jlong JNICALL
 Java_com_github_lyra_android_LyraDecoder_create(JNIEnv* env, jobject this_obj,
+                                                jint sampleRate, jint channels,
                                                 jstring model_base_path) {
   const char* cpp_model_base_path = env->GetStringUTFChars(model_base_path, 0);
-  auto decoder =
-      chromemedia::codec::LyraDecoder::Create(
-          16000, chromemedia::codec::kNumChannels, cpp_model_base_path)
-          .release();
+  auto decoder = chromemedia::codec::LyraDecoder::Create(sampleRate, channels,
+                                                         cpp_model_base_path)
+                     .release();
 
   return reinterpret_cast<jlong>(decoder);
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
+Java_com_github_lyra_android_LyraEncoder_setEncodedPacket(
+    JNIEnv* env, jobject this_obj, jlong ptr, jobject packet, jint packetSize) {
+  auto decoder = reinterpret_cast<chromemedia::codec::LyraDecoder*>(ptr);
+  auto packetPtr = (uint8_t*)env->GetDirectBufferAddress(packet);
+  return decoder->SetEncodedPacket(absl::MakeConstSpan(packetPtr, packetSize));
+}
+
+extern "C" JNIEXPORT jint JNICALL
+Java_com_github_lyra_android_LyraEncoder_decodeSamples(JNIEnv* env,
+                                                       jobject this_obj,
+                                                       jlong ptr,
+                                                       jint numSamples,
+                                                       jobject outSamples) {
+  auto decoder = reinterpret_cast<chromemedia::codec::LyraDecoder*>(ptr);
+  auto decoded = decoder->DecodeSamples(numSamples);
+  if (!decoded.has_value()) {
+    LOG(ERROR) << "Unable to decode samples " << numSamples << ".";
+    return 0;
+  }
+
+  auto outSamplesPtr = env->GetDirectBufferAddress(outSamples);
+  auto outSamplesSize = env->GetDirectBufferCapacity(outSamples);
+  auto requiredSize = decoded.value().size();
+  if (outSamplesSize < requiredSize) {
+    LOG(ERROR) << "outSamples capacity " << outSamplesSize
+               << " is insufficient to store decoded samples " << requiredSize
+               << ".";
+    return 0;
+  }
+
+  memcpy(outSamplesPtr, &decoded.value(), requiredSize);
+
+  return requiredSize;
 }
 
 extern "C" JNIEXPORT void JNICALL
@@ -63,7 +99,7 @@ Java_com_github_lyra_android_LyraEncoder_create(JNIEnv* env, jobject this_obj,
   return reinterpret_cast<jlong>(encoder);
 }
 
-extern "C" JNIEXPORT jboolean JNICALL
+extern "C" JNIEXPORT jint JNICALL
 Java_com_github_lyra_android_LyraEncoder_encode(JNIEnv* env, jobject this_obj,
                                                 jlong ptr, jshortArray samples,
                                                 jint sample_length,
@@ -78,7 +114,7 @@ Java_com_github_lyra_android_LyraEncoder_encode(JNIEnv* env, jobject this_obj,
       absl::MakeConstSpan(&samples_vector.at(0), sample_length));
   if (!encoded.has_value()) {
     LOG(ERROR) << "Unable to encode features";
-    return false;
+    return 0;
   }
 
   auto outBufferPtr = env->GetDirectBufferAddress(outBuffer);
@@ -88,12 +124,12 @@ Java_com_github_lyra_android_LyraEncoder_encode(JNIEnv* env, jobject this_obj,
     LOG(ERROR) << "outBuffer capacity " << outBufferSize
                << " is insufficient to store encoded features " << requiredSize
                << ".";
-    return false;
+    return 0;
   }
 
   memcpy(outBufferPtr, &encoded.value(), requiredSize);
 
-  return true;
+  return requiredSize;
 }
 
 extern "C" JNIEXPORT void JNICALL
