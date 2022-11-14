@@ -33,16 +33,17 @@ Java_com_github_lyra_android_LyraDecoder_create(JNIEnv* env, jobject this_obj,
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
-Java_com_github_lyra_android_LyraEncoder_setEncodedPacket(
-    JNIEnv* env, jobject this_obj, jlong ptr, jobject packet, jint packetSize) {
+Java_com_github_lyra_android_LyraDecoder_setEncodedPacket(JNIEnv* env, jobject,
+                                                          jlong ptr,
+                                                          jobject packet,
+                                                          jint packetSize) {
   auto decoder = reinterpret_cast<chromemedia::codec::LyraDecoder*>(ptr);
   auto packetPtr = (uint8_t*)env->GetDirectBufferAddress(packet);
   return decoder->SetEncodedPacket(absl::MakeConstSpan(packetPtr, packetSize));
 }
 
 extern "C" JNIEXPORT jint JNICALL
-Java_com_github_lyra_android_LyraEncoder_decodeSamples(JNIEnv* env,
-                                                       jobject this_obj,
+Java_com_github_lyra_android_LyraDecoder_decodeSamples(JNIEnv* env, jobject,
                                                        jlong ptr,
                                                        jint numSamples,
                                                        jobject outSamples) {

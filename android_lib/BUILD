@@ -27,8 +27,8 @@ cc_library(
 android_library(
     name = "lyra_android_lib",
     srcs = [
-        "//android_lib/gradle_root/src/main/java/com/github/lyra/android:LyraDecoder.java",
-        "//android_lib/gradle_root/src/main/java/com/github/lyra/android:LyraEncoder.java",
+        "//android_lib/gradle_root/library/src/main/java/com/github/lyra/android:LyraDecoder.java",
+        "//android_lib/gradle_root/library/src/main/java/com/github/lyra/android:LyraEncoder.java",
     ],
     custom_package = "com.github.lyra.android",
     deps = [
@@ -49,7 +49,7 @@ android_binary(
     ],
     assets_dir = "model_coeffs",
     custom_package = "com.github.lyra.android.example",
-    manifest = "gradle_root/src/main/AndroidManifest.xml",
+    manifest = "gradle_root/library/src/main/AndroidManifest.xml",
     multidex = "native",
     deps = [":lyra_android_lib"],
 )
