@@ -20,6 +20,8 @@
 const int kErrorEncodeFailed = -1;
 const int kErrorOutBufferTooSmall = -2;
 
+const int kErrorDecodeFailed = -1;
+
 extern "C" JNIEXPORT jlong JNICALL
 Java_com_github_lyra_android_LyraDecoder_create(JNIEnv* env, jobject this_obj,
                                                 jint sampleRate, jint channels,
@@ -46,25 +48,24 @@ extern "C" JNIEXPORT jint JNICALL
 Java_com_github_lyra_android_LyraDecoder_decodeSamples(JNIEnv* env, jobject,
                                                        jlong ptr,
                                                        jint numSamples,
-                                                       jobject outSamples) {
+                                                       jshortArray outSamples) {
   auto decoder = reinterpret_cast<chromemedia::codec::LyraDecoder*>(ptr);
   auto decoded = decoder->DecodeSamples(numSamples);
   if (!decoded.has_value()) {
     LOG(ERROR) << "Unable to decode samples " << numSamples << ".";
-    return 0;
+    return kErrorDecodeFailed;
   }
 
-  auto outSamplesPtr = env->GetDirectBufferAddress(outSamples);
-  auto outSamplesSize = env->GetDirectBufferCapacity(outSamples);
+  auto outSamplesSize = env->GetArrayLength(outSamples);
   auto requiredSize = decoded.value().size();
   if (outSamplesSize < requiredSize) {
     LOG(ERROR) << "outSamples capacity " << outSamplesSize
                << " is insufficient to store decoded samples " << requiredSize
                << ".";
-    return 0;
+    return kErrorOutBufferTooSmall;
   }
 
-  memcpy(outSamplesPtr, &decoded.value(), requiredSize);
+  env->SetShortArrayRegion(outSamples, 0, requiredSize, &decoded.value()[0]);
 
   return requiredSize;
 }
