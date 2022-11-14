@@ -101,7 +101,8 @@ extern "C" JNIEXPORT jint JNICALL
 Java_com_github_lyra_android_LyraEncoder_encode(JNIEnv* env, jobject this_obj,
                                                 jlong ptr, jshortArray samples,
                                                 jint sample_length,
-                                                jobject outBuffer) {
+                                                jobject outBuffer,
+                                                jint offset) {
   // copy to samples_vector
   std::vector<int16_t> samples_vector(sample_length);
   env->GetShortArrayRegion(samples, jsize{0}, sample_length,
@@ -115,8 +116,8 @@ Java_com_github_lyra_android_LyraEncoder_encode(JNIEnv* env, jobject this_obj,
     return kErrorEncodeFailed;
   }
 
-  auto outBufferPtr = env->GetDirectBufferAddress(outBuffer);
-  auto outBufferSize = env->GetDirectBufferCapacity(outBuffer);
+  auto outBufferPtr = (uint8_t*)env->GetDirectBufferAddress(outBuffer);
+  auto outBufferSize = env->GetDirectBufferCapacity(outBuffer) - offset;
   auto requiredSize = encoded.value().size();
   if (outBufferSize < requiredSize) {
     LOG(ERROR) << "outBuffer capacity " << outBufferSize
@@ -125,7 +126,7 @@ Java_com_github_lyra_android_LyraEncoder_encode(JNIEnv* env, jobject this_obj,
     return kErrorOutBufferTooSmall;
   }
 
-  memcpy(outBufferPtr, &encoded.value(), requiredSize);
+  memcpy(&outBufferPtr[offset], &encoded.value(), requiredSize);
 
   return requiredSize;
 }
