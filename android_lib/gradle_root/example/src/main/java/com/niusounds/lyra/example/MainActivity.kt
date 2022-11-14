@@ -3,6 +3,7 @@ package com.niusounds.lyra.example
 import android.annotation.SuppressLint
 import android.media.AudioFormat
 import android.media.AudioRecord
+import android.media.AudioTrack
 import android.media.MediaRecorder
 import android.os.Bundle
 import androidx.activity.result.contract.ActivityResultContracts
@@ -48,15 +49,27 @@ class MainActivity : AppCompatActivity() {
                 sampleRate = 16000,
                 channels = 1,
             )
+            val track = createAudioTrack(
+                sampleRate = 16000,
+                channels = 1,
+            )
             val encoder = Lyra.createEncoder(
-                sampleRate = 16000, channels = 1, bitrate = 3200,
+                sampleRate = 16000,
+                channels = 1,
+                bitrate = 9200,
+            )
+            val decoder = Lyra.createDecoder(
+                sampleRate = 16000,
+                channels = 1,
             )
             try {
                 record.startRecording()
+                track.play()
 
                 val audioData = ShortArray(320)
 
                 val encoded = ByteBuffer.allocateDirect(1024)
+                val decoded = ShortArray(320)
 
                 while (!Thread.interrupted()) {
                     val readSize = record.read(audioData, 0, audioData.size)
@@ -66,12 +79,22 @@ class MainActivity : AppCompatActivity() {
 
                     val encodedSize = encoder.encode(audioData, readSize, encoded)
 
-                    println("readSize: $readSize encodedSize: $encodedSize")
+//                    println("readSize: $readSize encodedSize: $encodedSize")
+
+                    val setEncodedPacketResult = decoder.setEncodedPacket(encoded, encodedSize)
+                    if (setEncodedPacketResult) {
+                        val decodeResult = decoder.decodeSamples(readSize, decoded)
+                        println("readSize: $readSize encodedSize: $encodedSize decodeResult: $decodeResult")
+                        track.write(decoded, 0, decoded.size)
+                    } else {
+                        track.write(audioData, 0, audioData.size)
+                    }
                 }
-                println(record)
             } finally {
                 record.release()
+                track.release()
                 encoder.release()
+                decoder.release()
             }
         }
     }
@@ -92,6 +115,23 @@ class MainActivity : AppCompatActivity() {
                     .build()
             )
             .setAudioSource(MediaRecorder.AudioSource.DEFAULT)
+            .build()
+    }
+
+    private fun createAudioTrack(sampleRate: Int, channels: Int): AudioTrack {
+        val channelMask = when (channels) {
+            1 -> AudioFormat.CHANNEL_OUT_MONO
+            2 -> AudioFormat.CHANNEL_OUT_STEREO
+            else -> error("Not supported channels")
+        }
+        return AudioTrack.Builder()
+            .setAudioFormat(
+                AudioFormat.Builder()
+                    .setSampleRate(sampleRate)
+                    .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                    .setChannelMask(channelMask)
+                    .build()
+            )
             .build()
     }
 }

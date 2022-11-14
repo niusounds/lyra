@@ -33,4 +33,11 @@ object Lyra {
     ): LyraEncoder {
         return LyraEncoder(sampleRate, channels, bitrate, enableDtx, weightsDirectory)
     }
+
+    fun createDecoder(
+        sampleRate: Int,
+        channels: Int,
+    ): LyraDecoder {
+        return LyraDecoder(sampleRate, channels, weightsDirectory)
+    }
 }

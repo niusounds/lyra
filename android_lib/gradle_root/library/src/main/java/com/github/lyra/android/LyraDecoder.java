@@ -13,7 +13,7 @@ public class LyraDecoder {
         return setEncodedPacket(nativePtr, packet, packetSize);
     }
 
-    public int decodeSamples(int numSamples, ByteBuffer outBuffer) {
+    public int decodeSamples(int numSamples, short[] outBuffer) {
         return decodeSamples(nativePtr, numSamples, outBuffer);
     }
 
@@ -25,7 +25,7 @@ public class LyraDecoder {
 
     private static native boolean setEncodedPacket(long ptr, ByteBuffer packet, int packetSize);
 
-    private static native int decodeSamples(long ptr, int numSamples, ByteBuffer outBuffer);
+    private static native int decodeSamples(long ptr, int numSamples, short[] outBuffer);
 
     private static native void release(long ptr);
 
