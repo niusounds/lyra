@@ -14,15 +14,11 @@
 
 #include <jni.h>
 
-#include <string>
-#include <vector>
-
-#include "absl/random/random.h"
-#include "glog/logging.h"  // IWYU pragma: keep
-#include "lyra_benchmark_lib.h"
-#include "lyra_config.h"
 #include "lyra_decoder.h"
 #include "lyra_encoder.h"
+
+const int kErrorEncodeFailed = -1;
+const int kErrorOutBufferTooSmall = -2;
 
 extern "C" JNIEXPORT jlong JNICALL
 Java_com_github_lyra_android_LyraDecoder_create(JNIEnv* env, jobject this_obj,
@@ -114,7 +110,7 @@ Java_com_github_lyra_android_LyraEncoder_encode(JNIEnv* env, jobject this_obj,
       absl::MakeConstSpan(&samples_vector.at(0), sample_length));
   if (!encoded.has_value()) {
     LOG(ERROR) << "Unable to encode features";
-    return 0;
+    return kErrorEncodeFailed;
   }
 
   auto outBufferPtr = env->GetDirectBufferAddress(outBuffer);
@@ -124,7 +120,7 @@ Java_com_github_lyra_android_LyraEncoder_encode(JNIEnv* env, jobject this_obj,
     LOG(ERROR) << "outBuffer capacity " << outBufferSize
                << " is insufficient to store encoded features " << requiredSize
                << ".";
-    return 0;
+    return kErrorOutBufferTooSmall;
   }
 
   memcpy(outBufferPtr, &encoded.value(), requiredSize);
