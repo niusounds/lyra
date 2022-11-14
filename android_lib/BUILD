@@ -11,7 +11,6 @@ cc_library(
     name = "lyra_jni",
     srcs = [
         "lyra_jni.cc",
-        "@org_tensorflow//tensorflow/lite:libtensorflowlite.so",
     ],
     linkopts = [
         "-landroid",
@@ -19,11 +18,8 @@ cc_library(
         "-llog",
     ],
     deps = [
-        "//:decoder_main_lib",
-        "//:encoder_main_lib",
-        "//:lyra_benchmark_lib",
-        "//:lyra_config",
-        "@com_google_absl//absl/random",
+        "//:lyra_decoder",
+        "//:lyra_encoder",
     ],
     alwayslink = True,
 )
@@ -31,21 +27,29 @@ cc_library(
 android_library(
     name = "lyra_android_lib",
     srcs = [
-        "//android_lib/java/com/github/lyra/android:LyraDecoder.java",
-        "//android_lib/java/com/github/lyra/android:LyraEncoder.java",
+        "//android_lib/gradle_root/src/main/java/com/github/lyra/android:LyraDecoder.java",
+        "//android_lib/gradle_root/src/main/java/com/github/lyra/android:LyraEncoder.java",
     ],
     custom_package = "com.github.lyra.android",
     deps = [
         ":lyra_jni",
-        # "@maven//:androidx_annotation_annotation",
-        # "@maven//:androidx_appcompat_appcompat",
-        # "@maven//:androidx_constraintlayout_constraintlayout",
-        # "@maven//:androidx_core_core",
         "@org_tensorflow//tensorflow/lite:libtensorflowlite.so",
     ],
 )
 
-# filegroup(
-#     name = "assets",
-#     srcs = ["//:android_lib_assets"],
-# )
+filegroup(
+    name = "assets",
+    srcs = ["//:android_example_assets"],
+)
+
+android_binary(
+    name = "lyra_android_lib_apk",
+    assets = [
+        ":assets",
+    ],
+    assets_dir = "model_coeffs",
+    custom_package = "com.github.lyra.android.example",
+    manifest = "gradle_root/src/main/AndroidManifest.xml",
+    multidex = "native",
+    deps = [":lyra_android_lib"],
+)

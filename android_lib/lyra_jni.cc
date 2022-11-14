@@ -14,13 +14,6 @@
 
 #include <jni.h>
 
-#include <string>
-#include <vector>
-
-#include "absl/random/random.h"
-#include "glog/logging.h"  // IWYU pragma: keep
-#include "lyra_benchmark_lib.h"
-#include "lyra_config.h"
 #include "lyra_decoder.h"
 #include "lyra_encoder.h"
 
