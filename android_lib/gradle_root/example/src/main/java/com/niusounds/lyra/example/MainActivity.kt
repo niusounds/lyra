@@ -9,6 +9,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.github.lyra.android.Lyra
 import com.niusounds.lyra.example.databinding.ActivityMainBinding
+import java.nio.ByteBuffer
 import kotlin.concurrent.thread
 
 class MainActivity : AppCompatActivity() {
@@ -40,32 +41,37 @@ class MainActivity : AppCompatActivity() {
     private fun startRecording() {
         binding.button.isEnabled = false
 
-//        Lyra.setup(applicationContext)
+        Lyra.setup(applicationContext)
         audioThread = thread {
 
             val record = createAudioRecord(
-                sampleRate = 44100,
+                sampleRate = 16000,
                 channels = 1,
             )
-
+            val encoder = Lyra.createEncoder(
+                sampleRate = 16000, channels = 1, bitrate = 3200,
+            )
             try {
                 record.startRecording()
 
-                val audioData = ShortArray(record.bufferSizeInFrames)
-//                val encoder = Lyra.createEncoder(
-//                    sampleRate = 16000, channels = 1, bitrate = 3200,
-//                )
+                val audioData = ShortArray(320)
+
+                val encoded = ByteBuffer.allocateDirect(1024)
+
                 while (!Thread.interrupted()) {
                     val readSize = record.read(audioData, 0, audioData.size)
                     if (readSize < 0) {
                         error("cannot read audio $readSize")
                     }
 
-                    println(readSize)
+                    val encodedSize = encoder.encode(audioData, readSize, encoded)
+
+                    println("readSize: $readSize encodedSize: $encodedSize")
                 }
                 println(record)
             } finally {
                 record.release()
+                encoder.release()
             }
         }
     }
